@@ -14,6 +14,9 @@ from django.views.decorators.csrf import csrf_exempt
 
 import zipfile
 from json import load
+from io import BytesIO
+import io
+from PIL import Image
 
 
 # Create your views here.
@@ -58,17 +61,25 @@ def getfile(request):
                             if zipname[-5:] == "xhtml":
                                 zipcontent = sf.read()
                             if zipname[-3:] == 'jpg':
+                                # print(sf)
                                 zipImage = sf.read()
-                                img.write(zipImage)
-                print(type(zipopf))
-                print(zipImage)
+                                zipImageEnc = BytesIO(zipImage)
+                                img = Image.open(zipImageEnc)
+                                # print(type(img))
+                                # img.show()
+                                # print(type(zipImageEnc))
+                                # stringImage = StringIO(zipImage)
+                                # print(stringImage)
+                                # img.write(zipImage)
+                # print(type(zipopf))
+                # print(zipImage)
                 print(2)
 
                 temp_dict = {}
                 temp_dict["name"] ="opfFile"
                 temp_dict["spine"] = zipopf.decode('utf-8')
                 temp_dict["xhtml"] = zipcontent.decode('utf-8')
-                # temp_dict["image"] = zipImage.decode('utf-8')
+                # temp_dict["image"] = zipImageEnc.decode('utf-8')
                 # json_dict = json.dumps(temp_dict)
                 print("read end")
                 # print(temp_dict)
