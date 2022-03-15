@@ -1,102 +1,63 @@
+import requests, json, zipfile, base64
 from django.shortcuts import render
-import requests
-import json
-from django.http import HttpResponse
-from django.http import JsonResponse
-
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt 
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django.views.decorators.csrf import csrf_exempt 
-
-
-import zipfile
-from json import load
-from io import BytesIO
-import io
-from PIL import Image
-
-
-# Create your views here.
-
-def test(request):
-    data = {"testname1":"testdata"}
-    print("1")
-    return HttpResponse(data) 
 
 @csrf_exempt
 def getfile(request):
-    print("getfile")
-    # client_file = request.FILES['file']
+    # 각 변수 설정
     zipopf ="opf is null"
     zipcontent = "contetnt is null"
     zipImage = "image is null"
+
+    # try,except
     try:
         if request.method == "POST":
-            print("post")
+            print("posted file")
             try:
                 client_file = request.FILES['file']
                 # unzip the zip file to the same directory 
                 with zipfile.ZipFile(client_file, 'r') as zip_ref:
                     ziplist = zip_ref.infolist()
-                    print(len(ziplist))
-                    # for i in range(47,len(ziplist)):
-                    #     selectedFile = ziplist[i]
-                    #     print(selectedFile)
-                    #     with zip_ref.open(selectedFile,"r") as sf:
-                    #         zipname = sf.name
-                    #         zipcontent = sf.read())
+                    print("unzip")
                     for i in range(0,len(ziplist)):
                         selectedFile = ziplist[i]
-                        # print(selectedFile.name[-3])
-                        # print(selectedFile)
                         with zip_ref.open(selectedFile,"r") as sf:
                             zipname = sf.name
                             if zipname[-3:] == 'opf':
-                                print("find opf")
                                 zipopf = sf.read() 
-                            # print(zipname[-3:])
                             if zipname[-5:] == "xhtml":
                                 zipcontent = sf.read()
                             if zipname[-3:] == 'jpg':
-                                # print(sf)
                                 zipImage = sf.read()
-                                zipImageEnc = BytesIO(zipImage)
-                                img = Image.open(zipImageEnc)
-                                # print(type(img))
-                                # img.show()
-                                # print(type(zipImageEnc))
-                                # stringImage = StringIO(zipImage)
-                                # print(stringImage)
-                                # img.write(zipImage)
-                # print(type(zipopf))
-                # print(zipImage)
-                print(2)
 
+                print("start input dict")
                 temp_dict = {}
                 temp_dict["name"] ="opfFile"
                 temp_dict["spine"] = zipopf.decode('utf-8')
                 temp_dict["xhtml"] = zipcontent.decode('utf-8')
-                # temp_dict["image"] = zipImageEnc.decode('utf-8')
-                # json_dict = json.dumps(temp_dict)
-                print("read end")
-                # print(temp_dict)
-                # print(type(json_dict))
+                temp_dict['image'] = base64.encodebytes(zipImage).decode('utf-8')
+
+                print("end input dict")
                 return HttpResponse(json.dumps(temp_dict), content_type="application/json")
 
             except Exception as e:
                 return HttpResponse("error1")
     except :
         return HttpResponse("error2")
-    # with zipfile.ZipFile(zip, 'r') as zip_ref:
-    #             first = zip_ref.infolist()[0]
-    #             with zip_ref.open(first, "r") as fo:
-    #                 json_content = json.load(fo)
-    #         return HttpResponse(json_content)
-    # # unzip = zip.read().decode()
-    # # unzip = zip.extractall()
-    # # print(unzip)
-    
-    # return HttpResponse("fail") 
+
+                                # zipImageEnc = BytesIO(zipImage)
+                                # print(zipImageEnc)
+                                # img = Image.open(zipImageEnc)
+                                # print(img)
+                                # print(type(img))
+                                # img.show()
+                                # print(type(zipImageEnc))
+                                # stringImage = StringIO(zipImage)
+                                # print(stringImage)
+                                # img.write(zipImage)

@@ -3,7 +3,6 @@ from . import views
 
 
 urlpatterns = [
-    path('', views.test),
     path('getfile/', views.getfile),
 ]
 
