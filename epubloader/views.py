@@ -12,60 +12,89 @@ import xmltodict
 
 
 
+# @csrf_exempt
+# def getfile(request):
+#     # 각 변수 설정
+#     zipopf ="opf is null"
+#     zipcontent = "contetnt is null"
+#     zipImage = "image is null"
+
+#     # try,except
+#     try:
+#         if request.method == "POST":
+#             print("posted file")
+#             try:
+#                 client_file = request.FILES['file']
+#                 # unzip the zip file to the same directory 
+#                 with zipfile.ZipFile(client_file, 'r') as zip_ref:
+#                     ziplist = zip_ref.infolist()
+#                     print('-------------------------')
+#                     print("unzip")
+#                     for i in range(0,len(ziplist)):
+#                         selectedFile = ziplist[i]
+#                         with zip_ref.open(selectedFile,"r") as sf:
+#                             zipname = sf.name
+#                             if zipname[-3:] == 'opf':
+#                                 zipopf = sf.read() 
+#                             if zipname[-5:] == "xhtml":
+#                                 zipcontent = sf.read()
+#                             if zipname[-3:] == 'jpg':
+#                                 zipImage = sf.read()
+
+#                 print("start input dict")
+#                 temp_dict = {}
+#                 temp_dict["name"] ="opfFile"
+#                 temp_dict["spine"] = zipopf.decode('utf-8')
+#                 temp_dict["xhtml"] = zipcontent.decode('utf-8')
+#                 temp_dict['image'] = base64.encodebytes(zipImage).decode('utf-8')
+
+#                 print("end input dict")
+#                 return HttpResponse(json.dumps(temp_dict), content_type="application/json")
+
+#             except Exception as e:
+#                 return HttpResponse("error1")
+#     except :
+#         return HttpResponse("error2")
+
 @csrf_exempt
-def getfile(request):
-    # 각 변수 설정
+def ImageController(request):
+     # 각 변수 설정
     zipopf ="opf is null"
-    zipcontent = "contetnt is null"
-    zipImage = "image is null"
 
     # try,except
     try:
         if request.method == "POST":
-            print("posted file")
+            decoded_image_list = {}
+            css_list = {}
             try:
                 client_file = request.FILES['file']
-                # unzip the zip file to the same directory 
                 with zipfile.ZipFile(client_file, 'r') as zip_ref:
                     ziplist = zip_ref.infolist()
                     print('-------------------------')
-                    print("unzip")
                     for i in range(0,len(ziplist)):
                         selectedFile = ziplist[i]
                         with zip_ref.open(selectedFile,"r") as sf:
                             zipname = sf.name
-                            if zipname[-3:] == 'opf':
-                                zipopf = sf.read() 
-                            if zipname[-5:] == "xhtml":
-                                zipcontent = sf.read()
                             if zipname[-3:] == 'jpg':
+                                imageName = zipname[:-3]
+                                split_contents = imageName.split('/')
+                                split_content = split_contents[-1][:-1]
                                 zipImage = sf.read()
+                                zipdata = base64.encodebytes(zipImage).decode('utf-8')
+                                decoded_image_list[split_content] = zipdata
+                            elif zipname[-3:] == 'css':
+                                zipCSS = sf.read()
+                                print(zipCSS)
+                print('----------------')
+                # print(decoded_image_list)
 
-                print("start input dict")
-                temp_dict = {}
-                temp_dict["name"] ="opfFile"
-                temp_dict["spine"] = zipopf.decode('utf-8')
-                temp_dict["xhtml"] = zipcontent.decode('utf-8')
-                temp_dict['image'] = base64.encodebytes(zipImage).decode('utf-8')
-
-                print("end input dict")
-                return HttpResponse(json.dumps(temp_dict), content_type="application/json")
+                return HttpResponse(json.dumps(decoded_image_list), content_type="application/json")
 
             except Exception as e:
-                return HttpResponse("error1")
+                return HttpResponse(e)
     except :
         return HttpResponse("error2")
 
-                                # zipImageEnc = BytesIO(zipImage)
-                                # print(zipImageEnc)
-                                # img = Image.open(zipImageEnc)
-                                # print(img)
-                                # print(type(img))
-                                # img.show()
-                                # print(type(zipImageEnc))
-                                # stringImage = StringIO(zipImage)
-                                # print(stringImage)
-                                # img.write(zipImage)
 
 @csrf_exempt
 def opfController(request):
@@ -76,6 +105,7 @@ def opfController(request):
     try:
         if request.method == "POST":
             print("posted file")
+            decoded_image_list = {}
             try:
                 client_file = request.FILES['file']
                 # unzip the zip file to the same directory 
@@ -96,18 +126,16 @@ def opfController(request):
                 opfxml = xmltodict.parse(opf)
                 opfjson = json.loads(json.dumps(opfxml))
                 title = opfjson['package']['metadata']['dc:title']
+                creator = opfjson['package']['metadata']['dc:creator']
                 spine = opfjson['package']['spine']['itemref']
                 manifest = opfjson['package']['manifest']['item']
-                # print(manifest)
                 print('----------------')
-                # print(spine)
-                # print(spine[0]['@idref'])
+
                 spine_list = []
                 for i in range(len(spine)):
                     page = spine[i]
                     content = page['@idref']
                     spine_list.append(content)
-                # print(spine_list)
 
                 manifest_list = []
                 for i in range(len(manifest)):
@@ -115,17 +143,18 @@ def opfController(request):
                     content = manifest_file['@href']
                     split_contents = content.split('/')
                     split_content = split_contents[-1]
+                    # xhtml 제한 추가
+                    # if split_content[-4:] == "html":
                     manifest_list.append(split_content)
-                print(manifest_list)
+                # print(manifest_list)
 
                 temp_dict = {}
                 temp_dict["name"] ="opfFile"
                 temp_dict["title"] = title
-                # temp_dict["check"] = opfjson['package']
+                temp_dict["creator"] = creator
                 temp_dict["spine"] = spine_list
                 temp_dict["manifest"] = manifest_list
 
-                print("end input dict")
                 return HttpResponse(json.dumps(temp_dict), content_type="application/json")
 
             except Exception as e:
@@ -170,11 +199,12 @@ def findFile(request):
                                     print('soup------------------')
                                     soup = BeautifulSoup(zipdata, "lxml") # 만약 이상하면 html.parser로 변환할 것
                                     testsoup = soup.section
-                                    print(testsoup)
-                                    print('_______________')
-                                    print(testsoup.find_all('img'))
+                                    # print(testsoup)
+                                    # print('_______________')
+                                    # print(testsoup.find_all())
+                                    # print(testsoup.find_all({'p','img','h1','h2','h3','h4','h5','h6'}))
                                     # print(soup.prettify())
-                                    paragraphlist  = soup.find_all({'p','img','figure','figure'})
+                                    paragraphlist  = testsoup.find_all({'p','img','h1','h2','h3','h4','h5','h6'})
                                     # print(body)
                                     
                                     
@@ -188,7 +218,7 @@ def findFile(request):
                                     # # make dict for json
                                     arraylist = []
                                     for i in range(len(paragraphlist)):
-                                        arraylist.append(str(paragraphlist[i])[3:-4])
+                                        arraylist.append(str(paragraphlist[i]))
                                     temp_dict["ars"] = arraylist
                                     # print(temp_dict)
                                     break

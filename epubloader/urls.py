@@ -3,8 +3,10 @@ from . import views
 
 
 urlpatterns = [
-    path('getfile/', views.getfile),
+    # path('getfile/', views.getfile),
     path('opf/', views.opfController),
     path('find/', views.findFile),
+    path('image/', views.ImageController),
+
 ]
 
