@@ -84,7 +84,13 @@ def ImageController(request):
                                 decoded_image_list[split_content] = zipdata
                             elif zipname[-3:] == 'css':
                                 zipCSS = sf.read()
-                                print(zipCSS)
+                                css = zipCSS.decode('utf-8')
+                                # cssName = zipname[:-3]
+                                # split_css_contents = cssName.split('/')
+                                # split_css_content = split_css_contents[-1][:-1]
+                                # print(css)
+                                decoded_image_list['css'] = css 
+                                # print(zipCSS)
                 print('----------------')
                 # print(decoded_image_list)
 
@@ -144,8 +150,8 @@ def opfController(request):
                     split_contents = content.split('/')
                     split_content = split_contents[-1]
                     # xhtml 제한 추가
-                    # if split_content[-4:] == "html":
-                    manifest_list.append(split_content)
+                    if split_content[-4:] == "html":
+                        manifest_list.append(split_content)
                 # print(manifest_list)
 
                 temp_dict = {}
