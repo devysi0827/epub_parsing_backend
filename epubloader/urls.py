@@ -6,7 +6,7 @@ urlpatterns = [
     # path('getfile/', views.getfile),
     path('opf/', views.opfController),
     path('find/', views.findFile),
-    path('image/', views.ImageController),
+    path('image/', views.imageController),
 
 ]
 
